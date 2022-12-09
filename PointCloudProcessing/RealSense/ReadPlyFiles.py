@@ -1,4 +1,3 @@
-import numpy as np
 import open3d
 
 def main():
