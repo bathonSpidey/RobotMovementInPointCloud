@@ -1,16 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\Users\bminj\OneDrive\Desktop\surface-simplification\edge_collapse.cpp">
+    <ClCompile Include="C:\Users\lukam\Desktop\RobotMovementInPointCloud\surface-simplification-cgal\edge_collapse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\bminj\OneDrive\Desktop\surface-simplification\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\lukam\Desktop\RobotMovementInPointCloud\surface-simplification-cgal\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{931C7A8E-CB4C-3D1C-810D-6DE16C7FE91B}</UniqueIdentifier>
+      <UniqueIdentifier>{CE808F99-D8E0-3036-B67B-30324A39BCC3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

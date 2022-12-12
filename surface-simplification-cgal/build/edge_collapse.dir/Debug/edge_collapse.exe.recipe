@@ -2,10 +2,10 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\bminj\OneDrive\Desktop\surface-simplification\build\x64\Debug\ZERO_CHECK</FullPath>
+      <FullPath>C:\Users\lukam\Desktop\RobotMovementInPointCloud\surface-simplification-cgal\build\x64\Debug\ZERO_CHECK</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>C:\Users\bminj\OneDrive\Desktop\surface-simplification\build\Debug\edge_collapse.exe</FullPath>
+      <FullPath>C:\Users\lukam\Desktop\RobotMovementInPointCloud\surface-simplification-cgal\build\Debug\edge_collapse.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

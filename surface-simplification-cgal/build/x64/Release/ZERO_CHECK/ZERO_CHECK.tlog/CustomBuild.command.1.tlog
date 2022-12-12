@@ -1,6 +1,6 @@
-^C:\USERS\BMINJ\ONEDRIVE\DESKTOP\SURFACE-SIMPLIFICATION\BUILD\CMAKEFILES\093CDFED6231A4193E5FFF7E38874989\GENERATE.STAMP.RULE
+^C:\USERS\LUKAM\DESKTOP\ROBOTMOVEMENTINPOINTCLOUD\SURFACE-SIMPLIFICATION-CGAL\BUILD\CMAKEFILES\00544A33E86373E04C833764DB417502\GENERATE.STAMP.RULE
 setlocal
-"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/bminj/OneDrive/Desktop/surface-simplification -BC:/Users/bminj/OneDrive/Desktop/surface-simplification/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/bminj/OneDrive/Desktop/surface-simplification/build/Surface_mesh_simplification_Examples.sln
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/lukam/Desktop/RobotMovementInPointCloud/surface-simplification-cgal -BC:/Users/lukam/Desktop/RobotMovementInPointCloud/surface-simplification-cgal/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/lukam/Desktop/RobotMovementInPointCloud/surface-simplification-cgal/build/Surface_Mesh_Simplification.sln
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
