@@ -119,7 +119,7 @@ def mouse_cb(event, x, y, flags, param):
 
 
 cv2.namedWindow(state.WIN_NAME, cv2.WINDOW_AUTOSIZE)
-cv2.resizeWindow(state.WIN_NAME,w, h)
+cv2.resizeWindow(state.WIN_NAME, w, h)
 cv2.setMouseCallback(state.WIN_NAME, mouse_cb)
 
 
@@ -293,9 +293,9 @@ def start():
         now = time.time()
         #totalToDelete = int(0.1 * verts.shape[0])
         #for i in range(totalToDelete):
-        #removeIndex = random.randint(0, verts.shape[0]-1)
-        #verts= np.delete(verts, removeIndex, 0)
-        #texcoords = np.delete(texcoords, removeIndex,0)
+            #removeIndex = random.randint(0, verts.shape[0]-1)
+            #verts= np.delete(verts, removeIndex, 0)
+            #texcoords = np.delete(texcoords, removeIndex,0)
 
         # Render
 
