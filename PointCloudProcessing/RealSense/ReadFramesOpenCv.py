@@ -4,9 +4,10 @@ import cv2
 import numpy as np
 import pyrealsense2 as rs
 import random
-
+import open3d
+import pyfqmr
+import trimesh as tr
 class AppState:
-
     def __init__(self, *args, **kwargs):
         self.WIN_NAME = 'RealSense'
         self.pitch, self.yaw = math.radians(-10), math.radians(-15)
@@ -43,7 +44,6 @@ config = rs.config()
 pipeline_wrapper = rs.pipeline_wrapper(pipeline)
 pipeline_profile = config.resolve(pipeline_wrapper)
 device = pipeline_profile.get_device()
-
 found_rgb = False
 for s in device.sensors:
     if s.get_info(rs.camera_info.name) == 'RGB Camera':
@@ -247,6 +247,7 @@ def pointcloud(out, verts, texcoords, color, painter=True):
     out[i[m], j[m]] = color[u[m], v[m]]
 
 
+
 out = np.empty((h, w, 3), dtype=np.uint8)
 print("This is out: ", out)
 
@@ -278,19 +279,23 @@ def start():
                 mapped_frame, color_source = depth_frame, depth_colormap
 
             points = pc.calculate(depth_frame)
-            pc.map_to(mapped_frame)
 
+            pc.map_to(mapped_frame)
             v, t = points.get_vertices(), points.get_texture_coordinates()
             verts = np.asanyarray(v).view(np.float32).reshape(-1, 3)  # xyz
+            pcd = open3d.geometry.PointCloud()
+            pcd.points = open3d.utility.Vector3dVector(verts)
+            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha=0.3)
+            tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles),
             print(verts[0])
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
             print(texcoords.shape)
         now = time.time()
         #totalToDelete = int(0.1 * verts.shape[0])
         #for i in range(totalToDelete):
-            #removeIndex = random.randint(0, verts.shape[0]-1)
-            #verts= np.delete(verts, removeIndex, 0)
-            #texcoords = np.delete(texcoords, removeIndex,0)
+        #removeIndex = random.randint(0, verts.shape[0]-1)
+        #verts= np.delete(verts, removeIndex, 0)
+        #texcoords = np.delete(texcoords, removeIndex,0)
 
         # Render
 
@@ -300,6 +305,12 @@ def start():
         #grid(out, (0, 0.5, 1), size=1, n=10)
         frustum(out, depth_intrinsics)
         axes(out, view([0, 0, 0]), state.rotation, size=0.1, thickness=1)
+        #Simplify
+        mesh_simplifier = pyfqmr.Simplify()
+        mesh_simplifier.setMesh(tri_mesh.vertices, tri_mesh.faces)
+        mesh_simplifier.simplify_mesh(target_count=1000, aggressiveness=7, preserve_border=True, verbose=10)
+        print(mesh_simplifier.getMesh())
+
 
         if not state.scale or out.shape[:2] == (h, w):
             pointcloud(out, verts, texcoords, color_source)
@@ -317,7 +328,7 @@ def start():
 
         cv2.setWindowTitle(
             state.WIN_NAME, "RealSense (%dx%d) %dFPS (%.2fms) %s" %
-            (w, h, 1.0/dt, dt*1000, "PAUSED" if state.paused else ""))
+                            (w, h, 1.0/dt, dt*1000, "PAUSED" if state.paused else ""))
 
         cv2.imshow(state.WIN_NAME, out)
         key = cv2.waitKey(1)
@@ -344,7 +355,6 @@ def start():
 
         if key == ord("c"):
             state.color ^= True
-
         if key == ord("s"):
             cv2.imwrite('./out.png', out)
 
