@@ -353,7 +353,8 @@ def start():
             state.color ^= True
         if key == ord("s"):
             cv2.imwrite('./out.png', out)
-
+        if key == ord('o'):
+            open3d.io.write_triangle_mesh('./out.ply', trianglemesh)
         if key == ord("e"):
             points.export_to_ply('./out.ply', mapped_frame)
 
