@@ -7,6 +7,7 @@ import random
 import open3d
 import pyfqmr
 import trimesh as tr
+fs = __import__('fast_simplification')
 class AppState:
     def __init__(self, *args, **kwargs):
         self.WIN_NAME = 'RealSense'
@@ -286,7 +287,7 @@ def start():
             pcd = open3d.geometry.PointCloud()
             pcd.points = open3d.utility.Vector3dVector(verts)
             trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha=0.3)
-            tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles),
+            tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
             print(verts[0])
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
             print(texcoords.shape)
@@ -306,12 +307,8 @@ def start():
         frustum(out, depth_intrinsics)
         axes(out, view([0, 0, 0]), state.rotation, size=0.1, thickness=1)
         #Simplify
-        mesh_simplifier = pyfqmr.Simplify()
-        mesh_simplifier.setMesh(tri_mesh.vertices, tri_mesh.faces)
-        mesh_simplifier.simplify_mesh(target_count=1000, aggressiveness=7, preserve_border=True, verbose=10)
-        print(mesh_simplifier.getMesh())
-
-
+        points_out, faces_out = fs.simplify(np.float32(tri_mesh.vertices), tri_mesh.faces, 0.5)
+        
         if not state.scale or out.shape[:2] == (h, w):
             pointcloud(out, verts, texcoords, color_source)
         else:
