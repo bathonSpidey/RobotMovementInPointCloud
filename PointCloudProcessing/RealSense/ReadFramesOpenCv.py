@@ -5,7 +5,6 @@ import numpy as np
 import pyrealsense2 as rs
 import random
 import open3d
-import pyfqmr
 import trimesh as tr
 fs = __import__('fast_simplification')
 class AppState:
