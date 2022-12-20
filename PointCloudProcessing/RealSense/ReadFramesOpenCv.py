@@ -269,12 +269,6 @@ def start():
 
             depth_image = np.asanyarray(depth_frame.get_data())
             color_image = np.asanyarray(color_frame.get_data())
-            
-            aligned_frames = aligner.process(frames)
-            aligned_depth_image = aligned_frames.get_depth_frame()
-            aligned_color_frame = aligned_frames.get_color_frame()
-            aligned_depth_intrinsics = rs.video_stream_profile(
-                aligned_color_frame.profile).get_intrinsics()
             depth_colormap = np.asanyarray(
                 colorizer.colorize(depth_frame).get_data())
 
@@ -291,20 +285,17 @@ def start():
             pcd = open3d.geometry.PointCloud()
             #pcd.points = open3d.utility.Vector3dVector(verts[:,:3])
             #pcd.normals = open3d.utility.Vector3dVector(verts[:,:3])
-            img_depth= open3d.geometry.Image(np.asanyarray(aligned_depth_image.get_data()))
-            img_color= open3d.geometry.Image(np.asanyarray(aligned_color_frame.get_data()))
-            rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(img_depth, img_color, convert_rgb_to_intensity=False)
-            pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(aligned_depth_intrinsics.width, aligned_depth_intrinsics.height, aligned_depth_intrinsics.fx, aligned_depth_intrinsics.fy, aligned_depth_intrinsics.ppx, aligned_depth_intrinsics.ppy)
-            pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
-            distances = pcd.compute_nearest_neighbor_distance()
-            avg_dist = np.mean(distances)
-            radius = 3 * avg_dist
+            img_depth= open3d.geometry.Image(np.asanyarray(depth_image))
+            #rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(img_depth, img_color, convert_rgb_to_intensity=False)
+            pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(depth_intrinsics.width, depth_intrinsics.height, depth_intrinsics.fx, depth_intrinsics.fy, depth_intrinsics.ppx, depth_intrinsics.ppy)
+            #pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
             #pcd.points = open3d.utility.Vector3dVector(verts)
-            pcd = open3d.geometry.PointCloud.create_from_depth_image(depth_frame)
-            open3d.visualization.draw_geometries([pcd])
-            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, open3d.utility.DoubleVector([radius, radius * 2]))
+            pcd = open3d.geometry.PointCloud.create_from_depth_image(img_depth, pinhole_camera_intrinsic)
+            #open3d.visualization.draw_geometries([pcd])
+            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha = 0.3)
             tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
             print(verts[0])
+            verts = trianglemesh.vertices
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
             print(texcoords.shape)
         now = time.time()
@@ -324,7 +315,7 @@ def start():
         axes(out, view([0, 0, 0]), state.rotation, size=0.1, thickness=1)
         #Simplify
         points_out, faces_out = fs.simplify(np.float32(tri_mesh.vertices), tri_mesh.faces, 0.5)
-        
+        verts = points_out
         if not state.scale or out.shape[:2] == (h, w):
             pointcloud(out, verts, texcoords, color_source)
         else:
