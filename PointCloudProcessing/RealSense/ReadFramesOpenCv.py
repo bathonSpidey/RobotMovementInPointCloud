@@ -6,6 +6,7 @@ import pyrealsense2 as rs
 import random
 import open3d
 import trimesh as tr
+from frame_processing import Processor
 fs = __import__('fast_simplification')
 class AppState:
     def __init__(self, *args, **kwargs):
@@ -67,8 +68,7 @@ w, h = depth_intrinsics.width, depth_intrinsics.height
 
 # Processing blocks
 pc = rs.pointcloud()
-decimate = rs.decimation_filter()
-decimate.set_option(rs.option.filter_magnitude, 2 ** state.decimate)
+decimator = Processor.get_decimation_filter(2 ** state.decimate)
 colorizer = rs.colorizer()
 
 
@@ -260,7 +260,7 @@ def start():
 
             depth_frame = frames.get_depth_frame()
             color_frame = frames.get_color_frame()
-            depth_frame = decimate.process(depth_frame)
+            depth_frame = decimator.process(depth_frame)
 
             # Grab new intrinsics (may be changed by decimation)
             depth_intrinsics = rs.video_stream_profile(
@@ -269,7 +269,7 @@ def start():
 
             depth_image = np.asanyarray(depth_frame.get_data())
             color_image = np.asanyarray(color_frame.get_data())
-
+            
             depth_colormap = np.asanyarray(
                 colorizer.colorize(depth_frame).get_data())
 
@@ -282,10 +282,23 @@ def start():
 
             pc.map_to(mapped_frame)
             v, t = points.get_vertices(), points.get_texture_coordinates()
-            verts = np.asanyarray(v).view(np.float32).reshape(-1, 3)  # xyz
+            verts = np.asanyarray(v).view(np.float32).reshape(-1, 2)  # xyz
+            vrt = np.asanyarray(v)
             pcd = open3d.geometry.PointCloud()
-            pcd.points = open3d.utility.Vector3dVector(verts)
-            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha=0.3)
+            #pcd.points = open3d.utility.Vector3dVector(verts[:,:3])
+            #pcd.normals = open3d.utility.Vector3dVector(verts[:,:3])
+            img_depth= open3d.geometry.Image(depth_image)
+            img_color= open3d.geometry.Image(color_image)
+            rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(img_depth, img_color, convert_rgb_to_intensity=False)
+            pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(depth_intrinsics.width, depth_intrinsics.height, depth_intrinsics.fx, depth_intrinsics.fy, depth_intrinsics.ppx, depth_intrinsics.ppy)
+            pcd= open3d.geometry.create_point_cloud_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
+            distances = pcd.compute_nearest_neighbor_distance()
+            avg_dist = np.mean(distances)
+            radius = 3 * avg_dist
+            #pcd.points = open3d.utility.Vector3dVector(verts)
+            pcd = open3d.geometry.PointCloud.create_from_depth_image(depth_frame)
+            open3d.visualization.draw_geometries([pcd])
+            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, open3d.utility.DoubleVector([radius, radius * 2]))
             tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
             print(verts[0])
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
@@ -321,7 +334,6 @@ def start():
             axes(out, view(state.pivot), state.rotation, thickness=4)
 
         dt = time.time() - now
-
         cv2.setWindowTitle(
             state.WIN_NAME, "RealSense (%dx%d) %dFPS (%.2fms) %s" %
                             (w, h, 1.0/dt, dt*1000, "PAUSED" if state.paused else ""))
@@ -344,7 +356,7 @@ def start():
 
         if key == ord("d"):
             state.decimate = (state.decimate + 1) % 3
-            decimate.set_option(rs.option.filter_magnitude, 2 ** state.decimate)
+            decimator.set_option(rs.option.filter_magnitude, 2 ** state.decimate)
 
         if key == ord("z"):
             state.scale ^= True
