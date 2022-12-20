@@ -283,7 +283,6 @@ def start():
             pc.map_to(mapped_frame)
             v, t = points.get_vertices(), points.get_texture_coordinates()
             verts = np.asanyarray(v).view(np.float32).reshape(-1, 2)  # xyz
-            vrt = np.asanyarray(v)
             pcd = open3d.geometry.PointCloud()
             #pcd.points = open3d.utility.Vector3dVector(verts[:,:3])
             #pcd.normals = open3d.utility.Vector3dVector(verts[:,:3])
