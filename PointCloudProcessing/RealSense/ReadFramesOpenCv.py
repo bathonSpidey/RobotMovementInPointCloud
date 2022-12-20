@@ -70,7 +70,7 @@ w, h = depth_intrinsics.width, depth_intrinsics.height
 pc = rs.pointcloud()
 decimator = Processor.get_decimation_filter(2 ** state.decimate)
 colorizer = rs.colorizer()
-
+aligner = rs.align(rs.stream.color)
 
 def mouse_cb(event, x, y, flags, param):
 
@@ -270,6 +270,11 @@ def start():
             depth_image = np.asanyarray(depth_frame.get_data())
             color_image = np.asanyarray(color_frame.get_data())
             
+            aligned_frames = aligner.process(frames)
+            aligned_depth_image = aligned_frames.get_depth_frame()
+            aligned_color_frame = aligned_frames.get_color_frame()
+            aligned_depth_intrinsics = rs.video_stream_profile(
+                aligned_color_frame.profile).get_intrinsics()
             depth_colormap = np.asanyarray(
                 colorizer.colorize(depth_frame).get_data())
 
@@ -286,11 +291,11 @@ def start():
             pcd = open3d.geometry.PointCloud()
             #pcd.points = open3d.utility.Vector3dVector(verts[:,:3])
             #pcd.normals = open3d.utility.Vector3dVector(verts[:,:3])
-            img_depth= open3d.geometry.Image(depth_image)
-            img_color= open3d.geometry.Image(color_image)
+            img_depth= open3d.geometry.Image(np.asanyarray(aligned_depth_image.get_data()))
+            img_color= open3d.geometry.Image(np.asanyarray(aligned_color_frame.get_data()))
             rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(img_depth, img_color, convert_rgb_to_intensity=False)
-            pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(depth_intrinsics.width, depth_intrinsics.height, depth_intrinsics.fx, depth_intrinsics.fy, depth_intrinsics.ppx, depth_intrinsics.ppy)
-            pcd= open3d.geometry.create_point_cloud_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
+            pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(aligned_depth_intrinsics.width, aligned_depth_intrinsics.height, aligned_depth_intrinsics.fx, aligned_depth_intrinsics.fy, aligned_depth_intrinsics.ppx, aligned_depth_intrinsics.ppy)
+            pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
             distances = pcd.compute_nearest_neighbor_distance()
             avg_dist = np.mean(distances)
             radius = 3 * avg_dist
