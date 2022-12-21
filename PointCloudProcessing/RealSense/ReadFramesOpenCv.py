@@ -6,6 +6,7 @@ import pyrealsense2 as rs
 import random
 import open3d
 import trimesh as tr
+from matplotlib import pyplot as plt
 from frame_processing import Processor
 fs = __import__('fast_simplification')
 class AppState:
@@ -54,9 +55,8 @@ if not found_rgb:
     print("The demo requires Depth camera with Color sensor")
     exit(0)
 
-config.enable_stream(rs.stream.depth, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, rs.format.bgr8, 30)
-
+config.enable_stream(rs.stream.depth, 848, 480, rs.format.z16, 60)
+config.enable_stream(rs.stream.color, 424, 240, rs.format.rgb8, 60)
 # Start streaming
 pipeline.start(config)
 
@@ -65,12 +65,14 @@ profile = pipeline.get_active_profile()
 depth_profile = rs.video_stream_profile(profile.get_stream(rs.stream.depth))
 depth_intrinsics = depth_profile.get_intrinsics()
 w, h = depth_intrinsics.width, depth_intrinsics.height
-
+intr = profile.get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
+pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(intr.width, intr.height, intr.fx, intr.fy, intr.ppx, intr.ppy)
 # Processing blocks
 pc = rs.pointcloud()
 decimator = Processor.get_decimation_filter(2 ** state.decimate)
 colorizer = rs.colorizer()
 aligner = rs.align(rs.stream.color)
+pcd = open3d.geometry.PointCloud()
 
 def mouse_cb(event, x, y, flags, param):
 
@@ -257,7 +259,7 @@ def start():
         if not state.paused:
             # Wait for a coherent pair of frames: depth and color
             frames = pipeline.wait_for_frames()
-
+            aligned_frames = aligner.process(frames)
             depth_frame = frames.get_depth_frame()
             color_frame = frames.get_color_frame()
             depth_frame = decimator.process(depth_frame)
@@ -279,21 +281,27 @@ def start():
 
             points = pc.calculate(depth_frame)
 
+            aligned_depth_image = aligned_frames.get_depth_frame()
+            aligned_color_frame = aligned_frames.get_color_frame()
+            aligned_depth_intrinsics = rs.video_stream_profile(
+                aligned_color_frame.profile).get_intrinsics()
+
             pc.map_to(mapped_frame)
             v, t = points.get_vertices(), points.get_texture_coordinates()
             verts = np.asanyarray(v).view(np.float32).reshape(-1, 2)  # xyz
             pcd = open3d.geometry.PointCloud()
             #pcd.points = open3d.utility.Vector3dVector(verts[:,:3])
             #pcd.normals = open3d.utility.Vector3dVector(verts[:,:3])
-            img_depth= open3d.geometry.Image(np.asanyarray(depth_image))
-            #rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(img_depth, img_color, convert_rgb_to_intensity=False)
-            pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(depth_intrinsics.width, depth_intrinsics.height, depth_intrinsics.fx, depth_intrinsics.fy, depth_intrinsics.ppx, depth_intrinsics.ppy)
-            #pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
+            aligned_img_depth= open3d.geometry.Image(np.asanyarray(aligned_depth_image.get_data()))
+            aligned_img_color = open3d.geometry.Image(np.asanyarray(aligned_color_frame.get_data()))
+            rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(aligned_img_depth, aligned_img_color, convert_rgb_to_intensity=False) 
+            pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
             #pcd.points = open3d.utility.Vector3dVector(verts)
-            pcd = open3d.geometry.PointCloud.create_from_depth_image(img_depth, pinhole_camera_intrinsic)
+            #pcd = open3d.geometry.PointCloud.create_from_depth_image(img_depth, pinhole_camera_intrinsic)
             #open3d.visualization.draw_geometries([pcd])
             trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha = 0.3)
             tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
+            #open3d.visualization.draw_geometries([pcd])
             print(verts[0])
             verts = trianglemesh.vertices
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
@@ -361,7 +369,7 @@ def start():
         if key == ord("s"):
             cv2.imwrite('./out.png', out)
         if key == ord('o'):
-            open3d.io.write_triangle_mesh('./out.ply', trianglemesh)
+            open3d.io.write_triangle_mesh('./out.obj', trianglemesh)
         if key == ord("e"):
             points.export_to_ply('./out.ply', mapped_frame)
 
