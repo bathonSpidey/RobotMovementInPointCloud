@@ -40,7 +40,7 @@ state = AppState()
 # Configure depth and color streams
 pipeline = rs.pipeline()
 config = rs.config()
-
+aligner = rs.align(rs.stream.color)
 pipeline_wrapper = rs.pipeline_wrapper(pipeline)
 pipeline_profile = config.resolve(pipeline_wrapper)
 device = pipeline_profile.get_device()
@@ -64,7 +64,9 @@ profile = pipeline.get_active_profile()
 depth_profile = rs.video_stream_profile(profile.get_stream(rs.stream.depth))
 depth_intrinsics = depth_profile.get_intrinsics()
 w, h = depth_intrinsics.width, depth_intrinsics.height
-
+intr = profile.get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
+pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(intr.width, intr.height, intr.fx, intr.fy, intr.ppx,
+                                                                 intr.ppy)
 # Processing blocks
 pc = rs.pointcloud()
 decimate = rs.decimation_filter()
@@ -257,7 +259,7 @@ def start():
         if not state.paused:
             # Wait for a coherent pair of frames: depth and color
             frames = pipeline.wait_for_frames()
-
+            aligned_frames = aligner.process(frames)
             depth_frame = frames.get_depth_frame()
             color_frame = frames.get_color_frame()
             depth_frame = decimate.process(depth_frame)
@@ -279,13 +281,19 @@ def start():
                 mapped_frame, color_source = depth_frame, depth_colormap
 
             points = pc.calculate(depth_frame)
-
+            aligned_depth_frame = aligned_frames.get_depth_frame()
+            aligned_depth_image = np.asanyarray(aligned_depth_frame.get_data())
+            aligned_color_frame = aligned_frames.get_color_frame()
+            aligned_color_image = np.asanyarray(aligned_color_frame.get_data())
             pc.map_to(mapped_frame)
             v, t = points.get_vertices(), points.get_texture_coordinates()
             verts = np.asanyarray(v).view(np.float32).reshape(-1, 3)  # xyz
             pcd = open3d.geometry.PointCloud()
-            pcd.points = open3d.utility.Vector3dVector(verts)
-            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha=0.3)
+            depth = open3d.geometry.Image(aligned_depth_image)
+            color = open3d.geometry.Image(aligned_color_image)
+            rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(color, depth, convert_rgb_to_intensity=False)
+            pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
+            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha=0.5)
             tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
             print(verts[0])
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
@@ -306,7 +314,7 @@ def start():
         frustum(out, depth_intrinsics)
         axes(out, view([0, 0, 0]), state.rotation, size=0.1, thickness=1)
         #Simplify
-        points_out, faces_out = fs.simplify(np.float32(tri_mesh.vertices), tri_mesh.faces, 0.5)
+        #points_out, faces_out = fs.simplify(np.float32(tri_mesh.trianglemesh), tri_mesh.triangles, 0.5)
         
         if not state.scale or out.shape[:2] == (h, w):
             pointcloud(out, verts, texcoords, color_source)
