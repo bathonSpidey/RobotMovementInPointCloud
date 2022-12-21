@@ -55,8 +55,8 @@ if not found_rgb:
     print("The demo requires Depth camera with Color sensor")
     exit(0)
 
-config.enable_stream(rs.stream.depth, 848, 480, rs.format.z16, 60)
-config.enable_stream(rs.stream.color, 424, 240, rs.format.rgb8, 60)
+config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+config.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
 # Start streaming
 pipeline.start(config)
 
@@ -65,15 +65,11 @@ profile = pipeline.get_active_profile()
 depth_profile = rs.video_stream_profile(profile.get_stream(rs.stream.depth))
 depth_intrinsics = depth_profile.get_intrinsics()
 w, h = depth_intrinsics.width, depth_intrinsics.height
-intr = profile.get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
-pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(intr.width, intr.height, intr.fx, intr.fy, intr.ppx, intr.ppy)
 # Processing blocks
 pc = rs.pointcloud()
 decimator = Processor.get_decimation_filter(2 ** state.decimate)
 colorizer = rs.colorizer()
 aligner = rs.align(rs.stream.color)
-pcd = open3d.geometry.PointCloud()
-
 def mouse_cb(event, x, y, flags, param):
 
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -262,7 +258,6 @@ def start():
             aligned_frames = aligner.process(frames)
             depth_frame = frames.get_depth_frame()
             color_frame = frames.get_color_frame()
-            depth_frame = decimator.process(depth_frame)
 
             # Grab new intrinsics (may be changed by decimation)
             depth_intrinsics = rs.video_stream_profile(
@@ -279,33 +274,28 @@ def start():
             else:
                 mapped_frame, color_source = depth_frame, depth_colormap
 
-            points = pc.calculate(depth_frame)
-
-            aligned_depth_image = aligned_frames.get_depth_frame()
+            aligned_depth_frame = aligned_frames.get_depth_frame()
+            aligned_depth_image = np.asanyarray(aligned_depth_frame.get_data())
             aligned_color_frame = aligned_frames.get_color_frame()
+            aligned_color_image = np.asanyarray(aligned_color_frame.get_data())
             aligned_depth_intrinsics = rs.video_stream_profile(
                 aligned_color_frame.profile).get_intrinsics()
-
+            points = pc.calculate(depth_frame)
             pc.map_to(mapped_frame)
             v, t = points.get_vertices(), points.get_texture_coordinates()
             verts = np.asanyarray(v).view(np.float32).reshape(-1, 2)  # xyz
-            pcd = open3d.geometry.PointCloud()
-            #pcd.points = open3d.utility.Vector3dVector(verts[:,:3])
-            #pcd.normals = open3d.utility.Vector3dVector(verts[:,:3])
-            aligned_img_depth= open3d.geometry.Image(np.asanyarray(aligned_depth_image.get_data()))
-            aligned_img_color = open3d.geometry.Image(np.asanyarray(aligned_color_frame.get_data()))
-            rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(aligned_img_depth, aligned_img_color, convert_rgb_to_intensity=False) 
-            pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
-            #pcd.points = open3d.utility.Vector3dVector(verts)
-            #pcd = open3d.geometry.PointCloud.create_from_depth_image(img_depth, pinhole_camera_intrinsic)
-            #open3d.visualization.draw_geometries([pcd])
-            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha = 0.3)
-            tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
-            #open3d.visualization.draw_geometries([pcd])
             print(verts[0])
-            verts = trianglemesh.vertices
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
             print(texcoords.shape)
+            pinhole_camera_intrinsic = open3d.camera.PinholeCameraIntrinsic(aligned_depth_intrinsics.width, aligned_depth_intrinsics.height, aligned_depth_intrinsics.fx, aligned_depth_intrinsics.fy, aligned_depth_intrinsics.ppx, aligned_depth_intrinsics.ppy)
+            depth_img  = open3d.geometry.Image(aligned_depth_image)
+            color_img  = open3d.geometry.Image(aligned_color_image)
+            rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(color_img, depth_img, convert_rgb_to_intensity=False) 
+            pcd = open3d.geometry.PointCloud()
+            pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
+            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha = 0.3)
+            tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
+
         now = time.time()
         #totalToDelete = int(0.1 * verts.shape[0])
         #for i in range(totalToDelete):
@@ -323,7 +313,6 @@ def start():
         axes(out, view([0, 0, 0]), state.rotation, size=0.1, thickness=1)
         #Simplify
         points_out, faces_out = fs.simplify(np.float32(tri_mesh.vertices), tri_mesh.faces, 0.5)
-        verts = points_out
         if not state.scale or out.shape[:2] == (h, w):
             pointcloud(out, verts, texcoords, color_source)
         else:
@@ -369,7 +358,7 @@ def start():
         if key == ord("s"):
             cv2.imwrite('./out.png', out)
         if key == ord('o'):
-            open3d.io.write_triangle_mesh('./out.obj', trianglemesh)
+            open3d.io.write_point_cloud('./out.ply', pcd)
         if key == ord("e"):
             points.export_to_ply('./out.ply', mapped_frame)
 
