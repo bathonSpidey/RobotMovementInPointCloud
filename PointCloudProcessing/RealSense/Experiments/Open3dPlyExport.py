@@ -9,8 +9,8 @@ import numpy as np
 if __name__ == '__main__':
     align = rs.align(rs.stream.color)
     config = rs.config()
-    config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, 1280, 720, rs.format.rgb8, 30)
+    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
     pipeline = rs.pipeline()
     profile = pipeline.start(config)
     intr = profile.get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
@@ -32,6 +32,7 @@ if __name__ == '__main__':
         color = o3d.geometry.Image(color_image)
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(color, depth, convert_rgb_to_intensity=False)
         pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
+        colorz = np.asanyarray(pcd.colors)
         depth_color_frame = rs.colorizer().colorize(depth_frame)
         depth_color_image = np.asanyarray(depth_color_frame.get_data())
         cv2.imshow('Color Stream', color_image1)

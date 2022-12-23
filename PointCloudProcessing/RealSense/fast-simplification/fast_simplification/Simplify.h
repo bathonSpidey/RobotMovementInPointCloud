@@ -316,8 +316,8 @@ namespace Simplify
 		TEXCOORD = 4,
 		COLOR = 8
 	};
-	struct Triangle { int v[3];double err[4];int deleted,dirty,attr;vec3f n;vec3f uvs[3];int material; };
-	struct Vertex { vec3f p;int tstart,tcount;SymetricMatrix q;int border;};
+	struct Triangle { int v[3];double err[4]; int deleted,dirty,attr;vec3f n;vec3f uvs[3];int material; };
+	struct Vertex { vec3f p;int tstart,tcount;SymetricMatrix q;int border; float granularity; int color[3];};
 	struct Ref { int tid,tvertex; };
 	std::vector<Triangle> triangles;
 	std::vector<Vertex> vertices;
@@ -807,6 +807,8 @@ namespace Simplify
 			if (error2 == error) p_result=p2;
 			if (error3 == error) p_result=p3;
 		}
+		if(vertices[id_v1].granularity > 0) error /= vertices[id_v1].granularity;
+		if(vertices[id_v2].granularity > 0) error /= vertices[id_v2].granularity;
 		return error;
 	}
 

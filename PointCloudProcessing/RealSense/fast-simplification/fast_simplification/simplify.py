@@ -28,8 +28,8 @@ def _check_args(target_reduction, target_count, n_faces):
     return int(target_count)
 
 
-def simplify(
-        points, triangles, target_reduction=None, target_count=None, agg=7,
+def simplify (
+        points, triangles, granularity, target_reduction=None, target_count=None, agg=7,
         verbose=False
 ):
     """Simplify a triangular mesh.
@@ -100,6 +100,8 @@ def simplify(
 
     if not isinstance(points, np.ndarray):
         points = np.array(points, dtype=np.float32)
+    if not isinstance(granularity, np.ndarray):
+        granularity = np.array(granularity, dtype=np.float32)
     if not isinstance(triangles, np.ndarray):
         triangles = np.array(triangles, dtype=np.int32)
 
@@ -128,14 +130,13 @@ def simplify(
     else:
         load = _simplify.load_int32
         triangles = triangles.astype(np.int32)
-
     load(
         points.shape[0],
         n_faces,
         points,
         triangles,
+        granularity
     )
-
     _simplify.simplify(target_count, agg, verbose)
     points = _simplify.return_points()
     faces = _simplify.return_faces_int32_no_padding().reshape(-1, 3)
