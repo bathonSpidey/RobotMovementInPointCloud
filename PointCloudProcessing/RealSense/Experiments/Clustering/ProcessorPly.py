@@ -12,6 +12,8 @@ def main():
         print(i)
         if i in allIndexesFluff[0]:
             colors[i] = [1.,0.,0.]
+        else:
+            colors[i] = [0,1.,0.]
 
     cloud.colors = open3d.utility.Vector3dVector(colors)
     open3d.visualization.draw_geometries([cloud])
