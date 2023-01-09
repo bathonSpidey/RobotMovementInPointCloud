@@ -32,7 +32,6 @@ if __name__ == '__main__':
         color = o3d.geometry.Image(color_image)
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(color, depth, convert_rgb_to_intensity=False)
         pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
-        colorz = np.asanyarray(pcd.colors)
         depth_color_frame = rs.colorizer().colorize(depth_frame)
         depth_color_image = np.asanyarray(depth_color_frame.get_data())
         cv2.imshow('Color Stream', color_image1)
