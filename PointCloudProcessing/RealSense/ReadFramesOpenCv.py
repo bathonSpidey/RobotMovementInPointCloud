@@ -2,10 +2,11 @@ import math
 import time
 import cv2
 import numpy as np
-import pyrealsense2 as rs
+#import pyrealsense2 as rs
 import random
 import open3d
 import trimesh as tr
+import pyrealsense as rs
 fs = __import__('fast_simplification')
 class AppState:
     def __init__(self, *args, **kwargs):
@@ -366,6 +367,7 @@ def start():
         if key == ord('o'):
             open3d.io.write_triangle_mesh('./out.ply', trianglemesh)
         if key == ord("e"):
+            new_vertices = rs.get_new_vertices(points, mapped_frame) #ex
             points.export_to_ply('./out.ply', mapped_frame)
 
         if key in (27, ord("q")) or cv2.getWindowProperty(state.WIN_NAME, cv2.WND_PROP_AUTOSIZE) < 0:
