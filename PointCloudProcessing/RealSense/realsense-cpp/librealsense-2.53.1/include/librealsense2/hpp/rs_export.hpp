@@ -49,7 +49,7 @@ namespace rs2
 			register_simple_option(OPTION_PLY_BINARY, option_range{ 0, 1, 1, 1 });
 			register_simple_option(OPTION_PLY_THRESHOLD, option_range{ 0, 1, 0.05f, 0 });
 		}
-		std::vector<rs2::vertex> get_new_vertices(points p, video_frame color)
+		std::tuple<std::vector<rs2::vertex>, std::vector<std::array<uint8_t, 3>>> get_new_vertices_and_colors(points p, video_frame color)
 		{
 			const bool use_texcoords = color && !get_option(OPTION_IGNORE_COLOR);
 			const auto verts = p.get_vertices();
@@ -60,7 +60,6 @@ namespace rs2
 			std::vector<rs2::vertex> new_verts;
 			std::vector<std::array<uint8_t, 3>> new_tex;
 			std::map<size_t, size_t> idx_map;
-
 			new_verts.reserve(p.size());
 			if (use_texcoords) new_tex.reserve(p.size());
 
@@ -79,7 +78,7 @@ namespace rs2
 					}
 				}
 			}
-			return new_verts;
+			return std::tie(new_verts, new_tex);
 		}
 
 	private:

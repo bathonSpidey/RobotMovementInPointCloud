@@ -33,12 +33,12 @@ PYBIND11_MODULE(NAME, m) {
     /** rs_export.hpp **/
     py::class_<rs2::save_to_ply, rs2::filter>(m, "save_to_ply")
         .def(py::init<std::string, rs2::pointcloud>(), "filename"_a = "RealSense Pointcloud ", "pc"_a = rs2::pointcloud())
-        .def("get_new_vertices", &rs2::save_to_ply::get_new_vertices, "Get new vertices from the pc")
         .def_property_readonly_static("option_ignore_color", [](py::object) { return rs2::save_to_ply::OPTION_IGNORE_COLOR; })
         .def_property_readonly_static("option_ply_mesh", [](py::object) { return rs2::save_to_ply::OPTION_PLY_MESH; })
         .def_property_readonly_static("option_ply_binary", [](py::object) { return rs2::save_to_ply::OPTION_PLY_BINARY; })
         .def_property_readonly_static("option_ply_normals", [](py::object) { return rs2::save_to_ply::OPTION_PLY_NORMALS; })
-        .def_property_readonly_static("option_ply_threshold", [](py::object) { return rs2::save_to_ply::OPTION_PLY_THRESHOLD; });
+        .def_property_readonly_static("option_ply_threshold", [](py::object) { return rs2::save_to_ply::OPTION_PLY_THRESHOLD; })
+        .def("get_new_vertices", &rs2::save_to_ply::get_new_vertices_and_colors, "Get new vertices and colors from the pc", "p"_a, "color"_a);
 
     m.def("log_to_console", &rs2::log_to_console, "min_severity"_a);
     m.def("log_to_file", &rs2::log_to_file, "min_severity"_a, "file_path"_a);
