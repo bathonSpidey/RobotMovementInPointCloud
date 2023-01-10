@@ -283,17 +283,9 @@ def start():
 
             v, t = points.get_vertices(), points.get_texture_coordinates()
             verts = np.asanyarray(v).view(np.float32).reshape(-1, 3)  # xyz
-            print(verts[0])
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
-            print(texcoords.shape)
         now = time.time()
-
-        # Render
-
-
         out.fill(0)
-
-        #grid(out, (0, 0.5, 1), size=1, n=10)
         frustum(out, depth_intrinsics)
         axes(out, view([0, 0, 0]), state.rotation, size=0.1, thickness=1)
 
@@ -342,9 +334,11 @@ def start():
             state.color ^= True
 
         if key == ord("s"):
+            print("saving state")
             cv2.imwrite('./out.png', out)
 
         if key == ord("e"):
+            print("saving state")
             points.export_to_ply('./out.ply', mapped_frame)
 
         if key in (27, ord("q")) or cv2.getWindowProperty(state.WIN_NAME, cv2.WND_PROP_AUTOSIZE) < 0:
