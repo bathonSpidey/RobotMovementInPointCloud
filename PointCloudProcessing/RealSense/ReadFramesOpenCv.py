@@ -294,8 +294,8 @@ def start():
             color = open3d.geometry.Image(aligned_color_image)
             rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(color, depth, convert_rgb_to_intensity=False)
             pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
-            #trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha=0.01)
-            #tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
+            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha=0.01)
+            tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
             print(verts[0])
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
             print(texcoords.shape)
@@ -315,9 +315,9 @@ def start():
         frustum(out, depth_intrinsics)
         axes(out, view([0, 0, 0]), state.rotation, size=0.1, thickness=1)
         #Simplify
-        #vertices = np.asanyarray(trianglemesh.vertices)
-        #granularity = np.random.rand(vertices.shape[0], 3) #Actually pass granularity here!
-        #points_out, faces_out = fs.simplify(np.float32(vertices), trianglemesh.triangles, np.float32(granularity), 0.5)
+        vertices = np.asanyarray(trianglemesh.vertices)
+        granularity = np.random.rand(vertices.shape[0], 3) #Actually pass granularity here!
+        points_out, faces_out = fs.simplify(np.float32(vertices), trianglemesh.triangles, np.float32(granularity), 0.5)
         
         if not state.scale or out.shape[:2] == (h, w):
             pointcloud(out, verts, texcoords, color_source)
