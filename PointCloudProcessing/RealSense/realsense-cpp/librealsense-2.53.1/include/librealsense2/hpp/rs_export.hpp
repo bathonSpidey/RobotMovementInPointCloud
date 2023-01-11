@@ -81,6 +81,34 @@ namespace rs2
 			return std::tie(new_verts, new_tex);
 		}
 
+
+		std::vector<std::array<size_t, 3>> get_faces(points p) {
+			static const auto threshold = get_option(OPTION_PLY_THRESHOLD);
+			const auto verts = p.get_vertices();
+			auto profile = p.get_profile().as<video_stream_profile>();
+			auto width = profile.width(), height = profile.height();
+			auto idx_map = get_idx_map(p);
+			std::vector<std::array<size_t, 3>> faces;
+
+			for (size_t x = 0; x < width - 1; ++x) {
+				for (size_t y = 0; y < height - 1; ++y) {
+					auto a = y * width + x, b = y * width + x + 1, c = (y + 1) * width + x, d = (y + 1) * width + x + 1;
+					if (verts[a].z && verts[b].z && verts[c].z && verts[d].z
+						&& fabs(verts[a].z - verts[b].z) < threshold && fabs(verts[a].z - verts[c].z) < threshold
+						&& fabs(verts[b].z - verts[d].z) < threshold && fabs(verts[c].z - verts[d].z) < threshold)
+					{
+						if (idx_map.count(a) == 0 || idx_map.count(b) == 0 || idx_map.count(c) == 0 ||
+							idx_map.count(d) == 0)
+							continue;
+						faces.push_back({ idx_map[a], idx_map[d], idx_map[b] });
+						faces.push_back({ idx_map[d], idx_map[a], idx_map[c] });
+					}
+				}
+			}
+			return faces;
+		}
+
+
 	private:
 		void func(frame data, frame_source& source)
 		{
@@ -105,6 +133,24 @@ namespace rs2
 			export_to_ply(depth, color);
 			source.frame_ready(data); // passthrough filter because processing_block::process doesn't support sinks
 		}
+
+		std::map<size_t, size_t> get_idx_map(points p) {
+			static const auto min_distance = 1e-6;
+			std::map<size_t, size_t> idx_map;
+			std::vector<rs2::vertex> new_verts;
+			const auto verts = p.get_vertices();
+			new_verts.reserve(p.size());
+			for (size_t i = 0; i < p.size(); ++i) {
+				if (fabs(verts[i].x) >= min_distance || fabs(verts[i].y) >= min_distance ||
+					fabs(verts[i].z) >= min_distance)
+				{
+					idx_map[int(i)] = int(new_verts.size());
+					new_verts.push_back({ verts[i].x, -1 * verts[i].y, -1 * verts[i].z });
+				}
+			}
+			return idx_map;
+		}
+
 
 		void export_to_ply(points p, video_frame color) {
 			const bool use_texcoords = color && !get_option(OPTION_IGNORE_COLOR);

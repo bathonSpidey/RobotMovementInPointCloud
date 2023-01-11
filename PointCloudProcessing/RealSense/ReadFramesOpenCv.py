@@ -370,6 +370,7 @@ def start():
             #getting new verts here, should be removed
             ply = rs.save_to_ply("test.ply")
             (new_verts, new_colors) = ply.get_new_vertices_and_colors(points, mapped_frame)
+            faces = ply.get_faces(points)
             ##
             points.export_to_ply('./out.ply', mapped_frame)
 
