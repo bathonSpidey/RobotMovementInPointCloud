@@ -289,13 +289,13 @@ def start():
             pc.map_to(mapped_frame)
             v, t = points.get_vertices(), points.get_texture_coordinates()
             verts = np.asanyarray(v).view(np.float32).reshape(-1, 3)  # xyz
-            pcd = open3d.geometry.PointCloud()
-            depth = open3d.geometry.Image(aligned_depth_image)
-            color = open3d.geometry.Image(aligned_color_image)
-            rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(color, depth, convert_rgb_to_intensity=False)
-            pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
-            trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha=0.01)
-            tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
+            #pcd = open3d.geometry.PointCloud()
+            #depth = open3d.geometry.Image(aligned_depth_image)
+            #color = open3d.geometry.Image(aligned_color_image)
+            #rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(color, depth, convert_rgb_to_intensity=False)
+            #pcd = open3d.geometry.PointCloud.create_from_rgbd_image(rgbd, pinhole_camera_intrinsic)
+            #trianglemesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha=0.01)
+            #tri_mesh = tr.Trimesh(np.asarray(trianglemesh.vertices), np.asarray(trianglemesh.triangles))
             print(verts[0])
             texcoords = np.asanyarray(t).view(np.float32).reshape(-1, 2)  # uv
             print(texcoords.shape)
@@ -315,9 +315,15 @@ def start():
         frustum(out, depth_intrinsics)
         axes(out, view([0, 0, 0]), state.rotation, size=0.1, thickness=1)
         #Simplify
-        vertices = np.asanyarray(trianglemesh.vertices)
-        granularity = np.random.rand(vertices.shape[0], 3) #Actually pass granularity here!
-        points_out, faces_out = fs.simplify(np.float32(vertices), trianglemesh.triangles, np.float32(granularity), 0.5)
+        ply = rs.save_to_ply("test.ply")
+        faces = ply.get_faces(points)
+        #ria = np.asanyarray(trianglemesh.triangles)
+        fc = np.asanyarray(faces)
+        (vertz,colorz) = ply.get_new_vertices_and_colors(points, color_frame)
+        vertices = np.asanyarray(vertz)
+        verts_arr = np.array([[np.float32(vert.x), np.float32(vert.y), np.float32(vert.z)] for vert in vertices]) 
+        granularity = np.random.rand(verts_arr.shape[0], 3).astype(np.float32) #Actually pass granularity here!
+        points_out, faces_out = fs.simplify(np.float32(verts_arr), fc, np.asanyarray(colorz, dtype=np.int32), np.float32(granularity), 0.5)
         
         if not state.scale or out.shape[:2] == (h, w):
             pointcloud(out, verts, texcoords, color_source)

@@ -11,8 +11,8 @@ from libcpp cimport bool
 from libc.stdint cimport int64_t
 
 cdef extern from "wrapper.h" namespace "Simplify":
-    void load_arrays_int32(const int, const int, float*, int*, float*)
-    void load_arrays_int64(const int, const int, float*, int64_t*, float*)
+    void load_arrays_int32(const int, const int, float*, int*, int*, float*)
+    void load_arrays_int64(const int, const int, float*, int64_t*, int*, float*)
     void simplify_mesh(int, double agressiveness, bool verbose)
     void get_points(float*)
     void get_triangles(int*)
@@ -24,17 +24,17 @@ cdef extern from "wrapper.h" namespace "Simplify":
     int n_points()
     int n_triangles()
     int load_triangles_from_vtk(const int, int*)
-    void load_points(const int, float*, float*)
+    void load_points(const int, float*, int*, float*)
 
 
-def load_int32(int n_points, int n_faces, float [:, ::1] points, int [:, ::1] faces, float [:, ::1] granularity):
-    load_arrays_int32(n_points, n_faces, &points[0, 0], &faces[0, 0], &granularity[0, 0])
+def load_int32(int n_points, int n_faces, float [:, ::1] points, int [:, ::1] faces, int [:, ::1] color, float [:, ::1] granularity):
+    load_arrays_int32(n_points, n_faces, &points[0, 0], &faces[0, 0], &color[0, 0], &granularity[0, 0])
 
 
 def load_int64(
-        int n_points, int n_faces, float [:, ::1] points, int64_t [:, ::1] faces, float [:, ::1] granularity
+        int n_points, int n_faces, float [:, ::1] points, int64_t [:, ::1] faces, int [:, ::1] color,  float [:, ::1] granularity
 ):
-    load_arrays_int64(n_points, n_faces, &points[0, 0], &faces[0, 0], &granularity[0, 0])
+    load_arrays_int64(n_points, n_faces, &points[0, 0], &faces[0, 0], &color[0, 0],  &granularity[0, 0])
 
 
 def simplify(int target_count, double agressiveness=7, bool verbose=False):
@@ -93,4 +93,4 @@ def load_from_vtk(int n_points, float [:, ::1] points, int [::1] faces, int n_fa
             "Input mesh ``mesh`` must consist of only triangles.\n"
             "Run ``.triangulate()`` to convert to an all triangle mesh."
         )
-    load_points(n_points, &points[0, 0], NULL)
+    load_points(n_points, &points[0, 0], NULL, NULL)
