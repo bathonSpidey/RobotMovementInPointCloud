@@ -319,11 +319,11 @@ def start():
         faces = ply.get_faces(points)
         #ria = np.asanyarray(trianglemesh.triangles)
         fc = np.asanyarray(faces)
-        (vertz,colorz) = ply.get_new_vertices_and_colors(points, color_frame)
-        vertices = np.asanyarray(vertz)
+        (new_vertices,new_colors) = ply.get_new_vertices_and_colors(points, color_frame)
+        vertices = np.asanyarray(new_vertices)
         verts_arr = np.array([[np.float32(vert.x), np.float32(vert.y), np.float32(vert.z)] for vert in vertices]) 
         granularity = np.random.rand(verts_arr.shape[0], 3).astype(np.float32) #Actually pass granularity here!
-        points_out, faces_out = fs.simplify(np.float32(verts_arr), fc, np.asanyarray(colorz, dtype=np.int32), np.float32(granularity), 0.5)
+        points_out, faces_out = fs.simplify(np.float32(verts_arr), fc, np.asanyarray(new_colors, dtype=np.int32), np.float32(granularity), 0.5)
         
         if not state.scale or out.shape[:2] == (h, w):
             pointcloud(out, verts, texcoords, color_source)
