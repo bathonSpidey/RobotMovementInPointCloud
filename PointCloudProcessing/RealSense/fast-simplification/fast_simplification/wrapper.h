@@ -88,6 +88,9 @@ namespace Simplify{
     return triangles.size();
   }
 
+  int n_colors(){
+    return vertices.size() * 3;
+  }
 
   // load triangles
   void load_triangles(const int n_tri, int64_t* faces){
@@ -179,5 +182,14 @@ namespace Simplify{
       }
     }
     return jj;
+  }
+
+  void get_colors(int* colors){
+    int n_colors = vertices.size() * 3;
+    for (int i = 0; i < n_colors; i++){
+      colors[0 + 3*i] = vertices[i].color[0];
+      colors[1 + 3*i] = vertices[i].color[1];
+      colors[2 + 3*i] = vertices[i].color[2];
+    }
   }
 }

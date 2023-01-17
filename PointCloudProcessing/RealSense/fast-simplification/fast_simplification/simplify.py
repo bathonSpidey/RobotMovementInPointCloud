@@ -143,7 +143,8 @@ def simplify (
     _simplify.simplify(target_count, agg, verbose)
     points = _simplify.return_points()
     faces = _simplify.return_faces_int32_no_padding().reshape(-1, 3)
-    return points, faces
+    colors = _simplify.return_colors()
+    return points, faces, colors
 
 
 def simplify_mesh(
