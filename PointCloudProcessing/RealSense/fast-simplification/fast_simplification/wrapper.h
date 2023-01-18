@@ -89,7 +89,7 @@ namespace Simplify{
   }
 
   int n_colors(){
-    return vertices.size() * 3;
+    return vertices.size();
   }
 
   // load triangles
