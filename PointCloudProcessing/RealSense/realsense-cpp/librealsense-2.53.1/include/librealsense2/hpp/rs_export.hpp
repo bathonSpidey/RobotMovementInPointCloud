@@ -49,6 +49,67 @@ namespace rs2
 			register_simple_option(OPTION_PLY_BINARY, option_range{ 0, 1, 1, 1 });
 			register_simple_option(OPTION_PLY_THRESHOLD, option_range{ 0, 1, 0.05f, 0 });
 		}
+
+		struct Mesh {
+			std::vector<rs2::vertex> new_vertices;
+			std::vector<std::array<uint8_t, 3>> new_colors;
+			std::vector<std::array<size_t, 3>> faces;
+			Mesh(std::vector<rs2::vertex> vertices, std::vector<std::array<uint8_t, 3>> colors, std::vector<std::array<size_t, 3>> mesh_faces) : new_vertices(vertices), new_colors(colors), faces(mesh_faces) {}
+		};
+
+		Mesh get_mesh(points p, video_frame color) {
+			const bool use_texcoords = color && !get_option(OPTION_IGNORE_COLOR);
+			const auto verts = p.get_vertices();
+			const auto texcoords = p.get_texture_coordinates();
+			const uint8_t* texture_data;
+			if (use_texcoords) // texture might be on the gpu, get pointer to data before for-loop to avoid repeated access
+				texture_data = reinterpret_cast<const uint8_t*>(color.get_data());
+			std::vector<rs2::vertex> new_verts;
+			std::vector<vec3d> normals;
+			std::vector<std::array<uint8_t, 3>> new_tex;
+			std::map<size_t, size_t> idx_map;
+			std::map<size_t, std::vector<vec3d>> index_to_normals;
+
+			new_verts.reserve(p.size());
+			if (use_texcoords) new_tex.reserve(p.size());
+
+			static const auto min_distance = 1e-6;
+
+			for (size_t i = 0; i < p.size(); ++i) {
+				if (fabs(verts[i].x) >= min_distance || fabs(verts[i].y) >= min_distance ||
+					fabs(verts[i].z) >= min_distance)
+				{
+					idx_map[int(i)] = int(new_verts.size());
+					new_verts.push_back({ verts[i].x, -1 * verts[i].y, -1 * verts[i].z });
+					if (use_texcoords)
+					{
+						auto rgb = get_texcolor(color, texture_data, texcoords[i].u, texcoords[i].v);
+						new_tex.push_back(rgb);
+					}
+				}
+			}
+
+			auto profile = p.get_profile().as<video_stream_profile>();
+			auto width = profile.width(), height = profile.height();
+			static const auto threshold = get_option(OPTION_PLY_THRESHOLD);
+			std::vector<std::array<size_t, 3>> faces;
+				for (size_t x = 0; x < width - 1; ++x) {
+					for (size_t y = 0; y < height - 1; ++y) {
+						auto a = y * width + x, b = y * width + x + 1, c = (y + 1) * width + x, d = (y + 1) * width + x + 1;
+						if (verts[a].z && verts[b].z && verts[c].z && verts[d].z
+							&& fabs(verts[a].z - verts[b].z) < threshold && fabs(verts[a].z - verts[c].z) < threshold
+							&& fabs(verts[b].z - verts[d].z) < threshold && fabs(verts[c].z - verts[d].z) < threshold)
+						{
+							if (idx_map.count(a) == 0 || idx_map.count(b) == 0 || idx_map.count(c) == 0 ||
+								idx_map.count(d) == 0)
+								continue;
+							faces.push_back({ idx_map[a], idx_map[d], idx_map[b] });
+							faces.push_back({ idx_map[d], idx_map[a], idx_map[c] });
+						}
+					}
+				}
+			return Mesh(new_verts, new_tex, faces);
+		}
 		std::tuple<std::vector<rs2::vertex>, std::vector<std::array<uint8_t, 3>>> get_new_vertices_and_colors(points p, video_frame color)
 		{
 			const bool use_texcoords = color && !get_option(OPTION_IGNORE_COLOR);
