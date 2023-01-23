@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option csharp_namespace = "AiInvest.Robotics.GrpcServer.Protos";
+
+package AiInvest.Robotics.GrpcServer;
+
+service RobotControllerServer {
+  rpc Move(MotorAnglesRequest) returns (MotorAnglesResponse);
+	rpc GetAngles(CurrentAnglesRequest)  returns (CurrentAnglesResponse);
+}
+
+message MotorAnglesRequest
+{
+	repeated float angles = 1;
+}
+
+message MotorAnglesResponse {}
+
+message CurrentAnglesRequest
+{
+	string angles = 1;
+}
+
+message CurrentAnglesResponse
+{
+	string angles =1;
+}

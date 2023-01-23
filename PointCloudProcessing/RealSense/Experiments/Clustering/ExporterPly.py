@@ -267,7 +267,6 @@ def start():
             w, h = depth_intrinsics.width, depth_intrinsics.height
 
             depth_image = np.asanyarray(depth_frame.get_data())
-            print(depth_image.shape)
             color_image = np.asanyarray(color_frame.get_data())
 
             depth_colormap = np.asanyarray(
@@ -335,7 +334,7 @@ def start():
 
         if key == ord("s"):
             print("saving state")
-            cv2.imwrite('./out.png', out)
+            cv2.imwrite('.out.png', out)
 
         if key == ord("e"):
             print("saving state")
