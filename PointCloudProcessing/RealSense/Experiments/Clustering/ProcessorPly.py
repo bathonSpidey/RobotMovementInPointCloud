@@ -5,29 +5,33 @@ import math
 
 def main():
     cloud = open3d.io.read_point_cloud("out.ply")
-    newPcd= open3d.geometry.PointCloud()
-    np.savetxt("depths.out", cloud.points)
     colors = np.asarray(cloud.colors)
-    normalized=[]
-    for i in colors:
-        normalized.append(math.sqrt(i[0]**2+ i[1]**2+i[2]**2))
+    depths = np.asarray(cloud.points)
+    print(depths[0])
+    normalized = []
+    for i in depths:
+        normalized.append(math.sqrt(i[2]**2 + i[1]**2 + i[0]**2))
+
     print(max(normalized))
-    allIndexesRequired = np.where(np.asarray(normalized) > 0.5)
-    onTable = np.where(np.asarray(normalized) <= 0.2)
+    print(min(normalized))
+    allIndexesRequired = np.where(np.asarray(normalized) > 1.)
+    table = np.where(np.asarray(normalized) <= 0.5)
+    onTable = np.where(table[0] >= 0.3)
     onTableNormalized=[]
     for i in range(len(colors)):
         if i in allIndexesRequired[0]:
-            colors[i] = [0.,0.,1.]
-            onTableNormalized.append(normalized[i])
-
+            colors[i] = [1.,1.,1.]
+        elif i in table[0]:
+            colors[i] = [1.,0,0]
+        elif i in onTable[0]:
+            colors[i] = [0.,1.,0.]
         else:
-            np.delete(colors, i, 0)
+            colors[i] = [1.,1.,1.]
 
-    print(onTableNormalized)
-    allIndexesRequired = np.where(np.asarray(onTableNormalized) > 1.)
-    for i in range(len(colors)):
-        if i in allIndexesRequired[0]:
-            colors[i] = [1., 0., 0.]
+    #allIndexesRequired = np.where(np.asarray(onTableNormalized) > 1.)
+    #for i in range(len(colors)):
+        #if i in allIndexesRequired[0]:
+            #colors[i] = [1., 0., 0.]
     cloud.colors = open3d.utility.Vector3dVector(colors)
     open3d.visualization.draw_geometries([cloud])
 
