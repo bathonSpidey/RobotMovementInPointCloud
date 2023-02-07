@@ -317,7 +317,7 @@ namespace Simplify
 		COLOR = 8
 	};
 	struct Triangle { int v[3];double err[4]; int deleted,dirty,attr;vec3f n;vec3f uvs[3];int material; };
-	struct Vertex { vec3f p;int tstart,tcount;SymetricMatrix q;int border; float granularity; int color[3];};
+	struct Vertex { vec3f p;int tstart,tcount;SymetricMatrix q;int border; float granularity; int color[3]; float t_arr[10]; };
 	struct Ref { int tid,tvertex; };
 	std::vector<Triangle> triangles;
 	std::vector<Vertex> vertices;
@@ -394,8 +394,10 @@ namespace Simplify
 				loopj(0,3)if(t.err[j]<threshold)
 				{
 
-					int i0=t.v[ j     ]; Vertex &v0 = vertices[i0];
-					int i1=t.v[(j+1)%3]; Vertex &v1 = vertices[i1];
+					int i0=t.v[ j     ]; 
+					Vertex &v0 = vertices[i0];
+					int i1=t.v[(j+1)%3]; 
+					Vertex &v1 = vertices[i1];
 					// Border check
 					if(v0.border != v1.border)  continue;
 

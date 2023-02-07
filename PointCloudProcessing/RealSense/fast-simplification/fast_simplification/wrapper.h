@@ -4,7 +4,7 @@
 namespace Simplify{
 
   // load points
-  void load_points(const int n_points, float* points, int* color, float* granularity){
+  void load_points(const int n_points, float* points, int* color, float* granularity, float* t_arr){
     vertices.clear();
     // load verticies
     for (int ii = 0; ii < n_points; ii ++){
@@ -17,6 +17,7 @@ namespace Simplify{
       v.color[2] = color[2 + 3*ii];
       if(ii % 3 == 0)
         v.granularity = granularity[ii - 3];
+      v.t_arr[ii] = t_arr[ii];
       vertices.push_back(v);
 
     }
@@ -69,14 +70,14 @@ namespace Simplify{
   }
 
   void load_arrays_int32(const int n_points, const int n_tri,
-                         float* points, int* faces, int* color, float* granularity){
-    load_points(n_points, points, color, granularity);
+                         float* points, int* faces, int* color, float* granularity, float* t_arr){
+    load_points(n_points, points, color, granularity, t_arr);
     load_triangles(n_tri, faces);
   }
 
   void load_arrays_int64(const int n_points, const int n_tri,
-                          float* points, int64_t* faces, int* color, float* granularity){
-    load_points(n_points, points, color, granularity);
+                          float* points, int64_t* faces, int* color, float* granularity, float* t_arr){
+    load_points(n_points, points, color, granularity, t_arr);
     load_triangles_int64(n_tri, faces);
   }
 

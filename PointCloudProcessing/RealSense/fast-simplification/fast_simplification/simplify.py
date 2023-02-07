@@ -29,7 +29,7 @@ def _check_args(target_reduction, target_count, n_faces):
 
 
 def simplify (
-        points, triangles, granularity, color, target_reduction=None, target_count=None, agg=7,
+        points, triangles, granularity, color, t_arr, target_reduction=None, target_count=None, agg=7,
         verbose=False
 ):
     """Simplify a triangular mesh.
@@ -138,7 +138,8 @@ def simplify (
         points,
         triangles,
         granularity,
-        color
+        color,
+        t_arr
     )
     _simplify.simplify(target_count, agg, verbose)
     points = _simplify.return_points()
